@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LectureMind – Dashboard</title>
+  <meta name="description" content="Transcribe and summarize your lectures. Upload video, paste text, or use a YouTube link." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ── Loading Spinner Overlay ──────────────────────────────────────────── -->
+<div class="spinner-overlay" id="spinner-overlay">
+  <div class="spinner"></div>
+  <div class="spinner-text">
+    <div id="spinner-label">Processing…</div>
+    <div class="spinner-step" id="spinner-step"></div>
+  </div>
+</div>
+
+<!-- ── Toast Container ──────────────────────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODALS
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- Upload File Modal -->
+<div class="modal-overlay" id="modal-upload">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-upload-title">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <span id="modal-upload-title">Upload Audio / Video</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-upload')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-drop-zone" id="upload-drop-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)">
+        <div class="upload-drop-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="14" rx="2"/>
+            <path d="M8 21h8M12 17v4M10 10l2-2 2 2M12 8v5"/>
+          </svg>
+        </div>
+        <div class="upload-drop-title">Drag & drop or click to select</div>
+        <div class="upload-drop-sub">mp3, mp4, wav, m4a, ogg, webm, flac — up to 200 MB</div>
+        <div class="upload-filename" id="upload-filename"></div>
+      </div>
+      <input type="file" id="file-input" accept=".mp3,.mp4,.wav,.m4a,.ogg,.webm,.flac,.mpeg"
+             style="display:none;" onchange="handleFileSelect(this.files[0])" />
+
+      <div class="length-selector" style="margin-top:18px;">
+        <span class="length-label">Summary length:</span>
+        <button class="length-btn" id="upload-len-short"  onclick="setLength('upload','short')">Short</button>
+        <button class="length-btn active" id="upload-len-medium" onclick="setLength('upload','medium')">Medium</button>
+        <button class="length-btn" id="upload-len-long"   onclick="setLength('upload','long')">Long</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-upload')">Cancel</button>
+      <button class="btn-submit" id="btn-submit-upload" onclick="submitUpload()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Transcribe &amp; Summarize
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Paste Text Modal -->
+<div class="modal-overlay" id="modal-text">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-text-title">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        <span id="modal-text-title">Paste Lecture Text</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-text')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea class="modal-textarea" id="paste-text"
+        placeholder="Paste or type your lecture transcript here…"
+        rows="8"></textarea>
+
+      <div class="length-selector">
+        <span class="length-label">Summary length:</span>
+        <button class="length-btn" id="text-len-short"  onclick="setLength('text','short')">Short</button>
+        <button class="length-btn active" id="text-len-medium" onclick="setLength('text','medium')">Medium</button>
+        <button class="length-btn" id="text-len-long"   onclick="setLength('text','long')">Long</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-text')">Cancel</button>
+      <button class="btn-submit" id="btn-submit-text" onclick="submitText()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Summarize
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- YouTube / URL Modal -->
+<div class="modal-overlay" id="modal-url">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-url-title">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+        </svg>
+        <span id="modal-url-title">Transcribe from URL</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-url')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="url-input">YouTube or Video URL</label>
+        <input class="form-input" id="url-input" type="url"
+          placeholder="https://www.youtube.com/watch?v=…" />
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:6px;">
+          Supports YouTube, Vimeo, and other yt-dlp compatible URLs.
+        </p>
+      </div>
+
+      <div class="length-selector">
+        <span class="length-label">Summary length:</span>
+        <button class="length-btn" id="url-len-short"  onclick="setLength('url','short')">Short</button>
+        <button class="length-btn active" id="url-len-medium" onclick="setLength('url','medium')">Medium</button>
+        <button class="length-btn" id="url-len-long"   onclick="setLength('url','long')">Long</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-url')">Cancel</button>
+      <button class="btn-submit" id="btn-submit-url" onclick="submitUrl()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Transcribe &amp; Summarize
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Record Detail Modal -->
+<div class="modal-overlay" id="modal-record">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-record-title">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <span id="modal-record-title">Record Detail</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-record')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="output-box" style="margin-bottom:16px;">
+        <div class="output-box-header">
+          <div class="output-box-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77"/>
+            </svg>
+            Transcript
+          </div>
+          <div class="output-box-actions">
+            <button class="btn-copy" onclick="copyText('record-transcript-text')">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div class="output-box-body">
+          <p class="output-text" id="record-transcript-text"></p>
+        </div>
+      </div>
+
+      <div class="output-box summary-box">
+        <div class="output-box-header">
+          <div class="output-box-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            Summary
+          </div>
+          <div class="output-box-actions">
+            <button class="btn-copy" onclick="copyText('record-summary-text')">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div class="output-box-body">
+          <p class="output-text" id="record-summary-text"></p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-record')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     APP LAYOUT
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="white">
+          <path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 2a8 8 0 100 16A8 8 0 0012 4zm-1 4h2v5h-2V8zm0 7h2v2h-2v-2z"/>
+        </svg>
+      </div>
+      <span class="sidebar-logo-text">LectureMind</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" id="nav-home" onclick="switchPanel('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Home
+      </div>
+
+      <div class="nav-item" id="nav-records" onclick="switchPanel('records')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        My Records
+      </div>
+
+      <div class="nav-divider"></div>
+
+      <div class="nav-item" onclick="openModal('modal-upload')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        Upload File
+      </div>
+
+      <div class="nav-item" onclick="openModal('modal-text')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        Paste Text
+      </div>
+
+      <div class="nav-item" onclick="openModal('modal-url')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+        </svg>
+        From URL
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="user-avatar" id="user-avatar-initials">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-user-name">Loading…</div>
+          <div class="user-email" id="sidebar-user-email">…</div>
+        </div>
+      </div>
+      <button class="btn-logout" id="btn-logout" onclick="handleLogout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+        </svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <div class="main-header">
+      <h1 class="greeting-text">Good <span id="greeting-part">afternoon</span>, <span id="greeting-name">there</span>! 👋</h1>
+      <p class="greeting-sub" id="greeting-date">Loading…</p>
+    </div>
+
+    <!-- ── Home Panel ─────────────────────────────────────────────────── -->
+    <div class="panel active" id="panel-home">
+
+      <div class="action-cards">
+        <!-- Upload -->
+        <div class="action-card card-upload" onclick="openModal('modal-upload')" role="button" tabindex="0" id="card-upload">
+          <div class="card-icon icon-upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-label">Upload Video / Audio</div>
+            <div class="card-desc">MP4, MP3, WAV, M4A and more. Up to 200 MB.</div>
+          </div>
+          <div class="card-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Paste Text -->
+        <div class="action-card card-text" onclick="openModal('modal-text')" role="button" tabindex="0" id="card-text">
+          <div class="card-icon icon-text">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-label">Paste Text</div>
+            <div class="card-desc">Paste lecture notes or a transcript and get a summary.</div>
+          </div>
+          <div class="card-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- URL -->
+        <div class="action-card card-url" onclick="openModal('modal-url')" role="button" tabindex="0" id="card-url">
+          <div class="card-icon icon-url">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22.54 6.42A2.78 2.78 0 0020.83 4.72C19.25 4.28 12 4.28 12 4.28s-7.25 0-8.83.44A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.17 19.28C4.75 19.72 12 19.72 12 19.72s7.25 0 8.83-.44a2.78 2.78 0 001.71-1.7A29 29 0 0023 12a29 29 0 00-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-label">Transcribe from URL</div>
+            <div class="card-desc">YouTube link or video URL — auto-downloaded and transcribed.</div>
+          </div>
+          <div class="card-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Section -->
+      <div class="output-section" id="output-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="panel-title" style="margin-bottom:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Results
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="length-label">Adjust summary:</span>
+            <button class="length-btn" id="res-len-short"  onclick="resummarize('short')">Short</button>
+            <button class="length-btn active" id="res-len-medium" onclick="resummarize('medium')">Medium</button>
+            <button class="length-btn" id="res-len-long"   onclick="resummarize('long')">Long</button>
+            <button class="btn-summarize" id="btn-resummarize" onclick="doResummarize()" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+              </svg>
+              Re-summarize
+            </button>
+          </div>
+        </div>
+
+        <div class="output-grid">
+          <!-- Transcript -->
+          <div class="output-box">
+            <div class="output-box-header">
+              <div class="output-box-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77"/>
+                </svg>
+                Transcript
+              </div>
+              <div class="output-box-actions">
+                <button class="btn-copy" onclick="copyText('transcript-output')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="output-box-body">
+              <p class="output-text" id="transcript-output">
+                <span class="output-placeholder">Your transcript will appear here…</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="output-box summary-box">
+            <div class="output-box-header">
+              <div class="output-box-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+                AI Summary
+              </div>
+              <div class="output-box-actions">
+                <button class="btn-copy" onclick="copyText('summary-output')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="output-box-body">
+              <p class="output-text" id="summary-output">
+                <span class="output-placeholder">Your summary will appear here…</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── My Records Panel ───────────────────────────────────────────── -->
+    <div class="panel" id="panel-records">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        My Records
+      </div>
+      <div class="records-grid" id="records-grid">
+        <div class="records-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          No records yet. Start by transcribing something!
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/dashboard.js"></script>
+
+</body>
+</html>

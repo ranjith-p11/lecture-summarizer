@@ -1,0 +1,17 @@
+# Secrets
+serviceAccountKey.json
+*.json
+
+# Cookies
+cookies.txt
+*.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Env
+.env
+
+# Mac
+.DS_Store

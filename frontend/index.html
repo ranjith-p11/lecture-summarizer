@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lecture Summarizer – Sign In</title>
+  <meta name="description" content="Sign in or create an account to start transcribing and summarizing lectures effortlessly." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="auth-page">
+
+  <!-- ── Auth Wrapper ──────────────────────────────────── -->
+  <div class="auth-wrapper">
+
+    <!-- Left branding panel -->
+    <div class="auth-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 2a8 8 0 100 16A8 8 0 0012 4zm-1 4h2v5h-2V8zm0 7h2v2h-2v-2z"/></svg>
+        </div>
+        <span class="brand-name">LectureMind</span>
+      </div>
+
+      <h1 class="brand-tagline">
+        Transform lectures into<br/>
+        <span>instant insights</span>
+      </h1>
+      <p class="brand-desc">
+        Upload a video, paste a URL, or type your text — LectureMind transcribes and summarizes it in seconds using advanced AI.
+      </p>
+
+      <div class="brand-features">
+        <div class="brand-feature">
+          <div class="brand-feature-dot"></div>
+          <span>Whisper AI transcription</span>
+        </div>
+        <div class="brand-feature">
+          <div class="brand-feature-dot"></div>
+          <span>LSA-powered key point extraction</span>
+        </div>
+        <div class="brand-feature">
+          <div class="brand-feature-dot"></div>
+          <span>YouTube & video file support</span>
+        </div>
+        <div class="brand-feature">
+          <div class="brand-feature-dot"></div>
+          <span>All records saved to your account</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="auth-form-panel">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+      </div>
+
+      <!-- ── Login ──────────────────────────── -->
+      <div class="auth-section active" id="section-login">
+        <h2 class="auth-title">Welcome back 👋</h2>
+        <p class="auth-subtitle">Sign in to access your lecture summaries.</p>
+
+        <div class="auth-error-msg" id="login-error"></div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email</label>
+            <input class="form-input" id="login-email" type="email"
+              placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input class="form-input" id="login-password" type="password"
+              placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button class="btn-primary" id="login-btn" type="submit">
+            Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- ── Signup ─────────────────────────── -->
+      <div class="auth-section" id="section-signup">
+        <h2 class="auth-title">Create an account</h2>
+        <p class="auth-subtitle">Join LectureMind and start summarizing today.</p>
+
+        <div class="auth-error-msg" id="signup-error"></div>
+
+        <form id="signup-form" onsubmit="handleSignup(event)">
+          <div class="form-group">
+            <label class="form-label" for="signup-name">Full Name</label>
+            <input class="form-input" id="signup-name" type="text"
+              placeholder="Jane Smith" required autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-email">Email</label>
+            <input class="form-input" id="signup-email" type="email"
+              placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-password">Password</label>
+            <input class="form-input" id="signup-password" type="password"
+              placeholder="At least 6 characters" required autocomplete="new-password" />
+          </div>
+          <button class="btn-primary" id="signup-btn" type="submit">
+            Create Account
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    function switchTab(tab) {
+      document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+      document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+      document.getElementById('section-login').classList.toggle('active', tab === 'login');
+      document.getElementById('section-signup').classList.toggle('active', tab === 'signup');
+    }
+  </script>
+</body>
+</html>
