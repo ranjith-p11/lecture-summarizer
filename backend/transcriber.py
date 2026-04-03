@@ -6,29 +6,40 @@ import os
 import tempfile
 import whisper
 
-# Load Whisper model once at module level (change to 'small' or 'medium' for higher accuracy)
-MODEL_SIZE = os.environ.get("WHISPER_MODEL", "base")
-print(f"[Transcriber] Loading Whisper model: {MODEL_SIZE}")
-_model = whisper.load_model(MODEL_SIZE)
-print(f"[Transcriber] Whisper model loaded.")
+# Load Whisper models dynamically to save memory if unused.
+_models = {}
+
+def get_model(size: str = "base"):
+    if size not in _models:
+        print(f"[Transcriber] Loading Whisper model: {size}...")
+        _models[size] = whisper.load_model(size)
+        print(f"[Transcriber] Whisper model '{size}' loaded.")
+    return _models[size]
 
 
-def transcribe_file(file_path: str) -> str:
+def transcribe_file(file_path: str, model_size: str = "base") -> dict:
     """
     Transcribe an audio/video file using Whisper.
 
     Args:
         file_path: Absolute path to the audio/video file.
+        model_size: Size of the model to use ("base", "small", "medium").
 
     Returns:
-        Transcribed text string.
+        Dict containing transcript text, language detected, and segments.
     """
-    print(f"[Transcriber] Transcribing file: {file_path}")
-    result = _model.transcribe(file_path)
-    return result.get("text", "").strip()
+    print(f"[Transcriber] Transcribing file: {file_path} using {model_size}")
+    model = get_model(model_size)
+    result = model.transcribe(file_path)
+    
+    return {
+        "text": result.get("text", "").strip(),
+        "language": result.get("language", "unknown"),
+        "segments": result.get("segments", [])
+    }
 
 
-def transcribe_youtube(url: str) -> str:
+def transcribe_youtube(url: str, model_size: str = "base") -> dict:
     import yt_dlp
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -69,7 +80,8 @@ def transcribe_youtube(url: str) -> str:
         if not audio_file:
             raise FileNotFoundError("Audio file not found.")
 
-        return transcribe_file(audio_file)
+        # Pass the desired model size from the user down to transcribe_file
+        return transcribe_file(audio_file, model_size)
 
 
 def transcribe_text_passthrough(text: str) -> str:

@@ -302,6 +302,17 @@
         </svg>
         From URL
       </div>
+
+      <div class="nav-divider"></div>
+
+      <div class="nav-item" id="nav-settings" onclick="showToast('Settings coming soon!', 'info')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </div>
+
     </nav>
 
     <div class="sidebar-footer">
@@ -325,8 +336,25 @@
   <main class="main-content">
 
     <div class="main-header">
-      <h1 class="greeting-text">Good <span id="greeting-part">afternoon</span>, <span id="greeting-name">there</span>! 👋</h1>
-      <p class="greeting-sub" id="greeting-date">Loading…</p>
+      <div>
+        <h1 class="greeting-text">Good <span id="greeting-part">afternoon</span>, <span id="greeting-name">there</span>! 👋</h1>
+        <p class="greeting-sub" id="greeting-date">Loading…</p>
+      </div>
+      <div class="header-actions">
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" placeholder="Search records...">
+        </div>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          <svg viewBox="0 0 24 24" id="theme-icon" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+            <!-- Default Moon / Sun path will be set in JS -->
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- ── Home Panel ─────────────────────────────────────────────────── -->
@@ -385,6 +413,52 @@
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </div>
+        </div>
+      </div>
+
+      <!-- Pure STT Section -->
+      <div class="stt-section" style="margin-bottom: 36px;">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          Speech to Text
+        </div>
+        <div class="output-box" style="padding: 24px; display:flex; flex-direction:column; gap:16px;">
+           <div>
+             <label class="form-label" for="stt-file-input">Upload Audio/Video file:</label>
+             <input type="file" id="stt-file-input" accept=".mp3,.mp4,.wav,.m4a,.ogg,.webm,.flac,.mpeg" style="width: 100%; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary);">
+           </div>
+           
+           <div>
+             <label class="form-label" for="stt-model-select">Select model:</label>
+             <select id="stt-model-select" style="width: 100%; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary);">
+                <option value="base">Base (Fastest)</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium (Most Accurate — May require 1.5GB initial download)</option>
+             </select>
+           </div>
+           
+           <button class="btn-primary" id="btn-stt" onclick="handleTranscription()" style="margin-top: 8px;">
+             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;margin-right:6px;"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/><line x1="8" x2="16" y1="22" y2="22"/></svg>
+             Transcribe Audio
+           </button>
+        </div>
+
+        <!-- STT Result Box -->
+        <div class="output-box stt-result-box" id="stt-result-container" style="display:none; margin-top:20px; border-color: rgba(0, 212, 170, 0.4);">
+           <div class="output-box-header" style="background: linear-gradient(90deg, rgba(0, 212, 170, 0.1), transparent);">
+              <div class="output-box-title" style="color: var(--teal-light);">
+                Transcription Output
+                <span id="stt-lang-badge" class="record-badge badge-text" style="margin-left:12px;">EN</span>
+              </div>
+              <div class="output-box-actions">
+                <button class="btn-copy" onclick="copyText('stt-transcript-output')">Copy</button>
+              </div>
+           </div>
+           <div class="output-box-body" style="max-height: 400px;">
+              <div class="output-text" id="stt-transcript-output" style="line-height:2.0;"></div>
+           </div>
         </div>
       </div>
 

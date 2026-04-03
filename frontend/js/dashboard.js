@@ -1,6 +1,36 @@
 // dashboard.js – All dashboard UI logic
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Theme Management ───────────────────────────────────────────────────────
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
+    document.body.classList.add('light-mode');
+  }
+  updateThemeIcon();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  updateThemeIcon();
+}
+
+function updateThemeIcon() {
+  const isLight = document.body.classList.contains('light-mode');
+  const icon = document.getElementById('theme-icon');
+  if (!icon) return;
+  if (isLight) {
+    // Moon icon for switching back to dark
+    icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+  } else {
+    // Sun icon for switching to light
+    icon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+  }
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let currentUser      = null;
 let currentTranscript = '';
@@ -8,6 +38,9 @@ let currentSourceType = 'text';
 let currentSourceName = '';
 let selectedFile     = null;
 let lengthSettings   = { upload: 'medium', text: 'medium', url: 'medium', result: 'medium' };
+
+// Initialize theme immediately on load
+initTheme();
 
 // ── Auth Guard ─────────────────────────────────────────────────────────────
 firebase.auth().onAuthStateChanged((user) => {
@@ -581,3 +614,78 @@ async function generateVisuals() {
     hideSpinner();
   }
 }
+
+// ── Pure Speech-to-Text ──────────────────────────────────────────────────
+async function handleTranscription() {
+  const fileInput = document.getElementById('stt-file-input');
+  const modelSelect = document.getElementById('stt-model-select');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    showToast('Please select a file to transcribe.', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btn-stt');
+  btn.disabled = true;
+  document.getElementById('stt-result-container').style.display = 'none';
+  document.getElementById('stt-transcript-output').innerHTML = '';
+
+  showSpinner('Transcribing Audio...', `Using ${modelSelect.value} model. This may take longer for higher accuracy models.`);
+  
+  try {
+    const token = await getIdToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('model', modelSelect.value);
+    
+    const API_BASE = window.location.origin;
+    const res = await fetch(`${API_BASE}/api/transcribe`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    });
+    
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Transcription failed');
+    }
+    
+    const data = await res.json();
+    
+    // Show Output
+    document.getElementById('stt-result-container').style.display = 'block';
+    
+    const langBadge = document.getElementById('stt-lang-badge');
+    if (data.language) {
+      langBadge.textContent = data.language.toUpperCase();
+      langBadge.style.display = 'inline-flex';
+    } else {
+      langBadge.style.display = 'none';
+    }
+    
+    // Format Optional Timestamps safely handling <br>
+    const outputElem = document.getElementById('stt-transcript-output');
+    if (data.segments && data.segments.length > 0) {
+      let htmlContent = '';
+      data.segments.forEach(seg => {
+         const start = new Date(seg.start * 1000).toISOString().substring(14, 19);
+         const end = new Date(seg.end * 1000).toISOString().substring(14, 19);
+         // Filter potential HTML injections implicitly through basic sanitization
+         const cleanText = seg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+         htmlContent += `<span style="color:var(--teal-light); font-weight:600; font-family:monospace; margin-right:8px;">[${start} - ${end}]</span> ${cleanText}<br>`;
+      });
+      outputElem.innerHTML = htmlContent;
+    } else {
+      outputElem.textContent = data.transcript;
+    }
+    
+    showToast('Transcription successful!', 'success');
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    hideSpinner();
+    btn.disabled = false;
+  }
+}
+

@@ -76,6 +76,11 @@ def api_transcribe():
     source_type = request.form.get("source_type") or (
         request.json.get("source_type") if request.is_json else None
     )
+    
+    # Grab the model parameter if provided
+    model_choice = request.form.get("model", "base")
+    if request.is_json:
+        model_choice = request.json.get("model", model_choice)
 
     try:
         # ── 1. Paste Text ──────────────────────────────────────────────────
@@ -85,7 +90,12 @@ def api_transcribe():
             if not raw_text:
                 return jsonify({"error": "No text provided."}), 400
             transcript = transcribe_text_passthrough(raw_text)
-            return jsonify({"transcript": transcript, "source_type": "text"})
+            return jsonify({
+                "transcript": transcript, 
+                "source_type": "text",
+                "language": "en",
+                "segments": []
+            })
 
         # ── 2. YouTube / URL ───────────────────────────────────────────────
         if source_type == "url":
@@ -93,8 +103,13 @@ def api_transcribe():
             url = data.get("url", "").strip()
             if not url:
                 return jsonify({"error": "No URL provided."}), 400
-            transcript = transcribe_youtube(url)
-            return jsonify({"transcript": transcript, "source_type": "url"})
+            result_dict = transcribe_youtube(url, model_choice)
+            return jsonify({
+                "transcript": result_dict["text"], 
+                "language": result_dict["language"],
+                "segments": result_dict["segments"],
+                "source_type": "url"
+            })
 
         # ── 3. File Upload ─────────────────────────────────────────────────
         if "file" not in request.files:
@@ -111,12 +126,14 @@ def api_transcribe():
             tmp_path = tmp.name
 
         try:
-            transcript = transcribe_file(tmp_path)
+            result_dict = transcribe_file(tmp_path, model_choice)
         finally:
             os.unlink(tmp_path)
 
         return jsonify({
-            "transcript": transcript,
+            "transcript": result_dict["text"],
+            "language": result_dict.get("language", "unknown"),
+            "segments": result_dict.get("segments", []),
             "source_type": "file",
             "filename": uploaded_file.filename,
         })
