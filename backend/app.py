@@ -3,6 +3,8 @@ app.py – Main Flask API server for Lecture Summarizer
 """
 import os
 import tempfile
+import re
+from collections import Counter
 from functools import wraps
 
 from flask import Flask, request, jsonify, send_from_directory, send_file
@@ -269,6 +271,64 @@ def export_text():
         )
     except Exception as e:
         print(f"[/api/export/text] Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/visualize", methods=["POST"])
+@require_auth
+def api_visualize():
+    try:
+        data = request.get_json(force=True)
+        summary = data.get("summary", "")
+        key_points = data.get("key_points", [])
+
+        # 1. Flowchart Generation
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', summary) if len(s.strip()) > 5]
+        if not sentences:
+            sentences = ["No summary available"]
+        
+        flowchart = "graph TD\n"
+        for i, sent in enumerate(sentences):
+            safe_text = sent.replace('[', '(').replace(']', ')').replace('"', "'").replace('\n', ' ')
+            if len(safe_text) > 80:
+                safe_text = safe_text[:77] + "..."
+            
+            node_id = f"N{i}"
+            flowchart += f'  {node_id}["{safe_text}"]\n'
+            if i > 0:
+                flowchart += f'  N{i-1} --> {node_id}\n'
+        
+        # 2. Mind Map Generation
+        mindmap = "mindmap\n  root((Summary))\n"
+        for i, pt in enumerate(key_points):
+            safe_pt = pt.replace('(', '').replace(')', '').replace('\n', ' ').replace('"', "'")
+            if len(safe_pt) > 50:
+                safe_pt = safe_pt[:47] + "..."
+            mindmap += f'    Node{i}["{safe_pt}"]\n'
+
+        # 3. Graph Data Generation
+        words = re.findall(r'\b[a-zA-Z]{3,}\b', summary.lower())
+        stop_words = {
+            "the", "and", "but", "for", "with", "this", "that", "are", "was", "were", "not", "have", 
+            "has", "had", "can", "could", "would", "from", "their", "them", "these", "some", "what",
+            "which", "when", "where", "also", "into", "been", "only", "most", "more"
+        }
+        filtered_words = [w for w in words if w not in stop_words]
+        
+        counts = Counter(filtered_words).most_common(6)
+        labels = [c[0] for c in counts]
+        values = [c[1] for c in counts]
+
+        return jsonify({
+            "flowchart": flowchart,
+            "mindmap": mindmap,
+            "graph_data": {
+                "labels": labels,
+                "values": values
+            }
+        })
+    except Exception as e:
+        print(f"[/api/visualize] Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 

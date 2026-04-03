@@ -501,6 +501,48 @@
             Download TXT
           </button>
         </div>
+        </div>
+
+        <div style="margin-top:20px; text-align:center;">
+          <button class="btn-primary" id="btn-generate-visuals" onclick="generateVisuals()" style="width:auto; padding:10px 24px; background:linear-gradient(135deg, #a78bfa, #8b5cf6);">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;margin-right:6px;"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+            Generate Visual Insights
+          </button>
+        </div>
+
+        <div class="visual-insights" id="visual-insights-section" style="display:none; margin-top:28px;">
+          <div class="panel-title" style="margin-bottom:12px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            Visual Insights
+          </div>
+          
+          <div class="length-selector" style="margin-bottom:0;">
+            <button class="length-btn active" id="tab-flowchart" onclick="switchVisualTab('flowchart')">Flowchart</button>
+            <button class="length-btn" id="tab-mindmap" onclick="switchVisualTab('mindmap')">Mind Map</button>
+            <button class="length-btn" id="tab-graph" onclick="switchVisualTab('graph')">Keyword Graph</button>
+          </div>
+
+          <div class="output-box" style="margin-top:16px; border-color: rgba(167, 139, 250, 0.4);">
+            <div class="output-box-body" style="min-height:300px; display:flex; align-items:center; justify-content:center; background:var(--bg-base); overflow:auto;">
+              
+              <div id="visual-flowchart" class="visual-content" style="width:100%; display:block;">
+                <div class="mermaid" id="mermaid-flowchart"></div>
+              </div>
+
+              <div id="visual-mindmap" class="visual-content" style="width:100%; display:none;">
+                <div class="mermaid" id="mermaid-mindmap"></div>
+              </div>
+
+              <div id="visual-graph" class="visual-content" style="width:100%; display:none; max-width:600px; margin:0 auto; padding-top:10px;">
+                <canvas id="chart-canvas"></canvas>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -530,6 +572,10 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+<!-- Visual Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/api.js"></script>

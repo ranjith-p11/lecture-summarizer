@@ -465,3 +465,119 @@ async function exportNotes(type) {
     hideSpinner();
   }
 }
+
+// ── Visual Insights ──────────────────────────────────────────────────────────
+
+let myChartInstance = null;
+
+function switchVisualTab(tabId) {
+  ['flowchart', 'mindmap', 'graph'].forEach(id => {
+    const btn = document.getElementById(`tab-${id}`);
+    const content = document.getElementById(`visual-${id}`);
+    if (btn && content) {
+      if (id === tabId) {
+        btn.classList.add('active');
+        content.style.display = 'block';
+      } else {
+        btn.classList.remove('active');
+        content.style.display = 'none';
+      }
+    }
+  });
+}
+
+async function generateVisuals() {
+  const summaryText = document.getElementById('summary-output').innerText || '';
+  const keyPointsNodes = document.querySelectorAll('#key-points-output li');
+  const keyPoints = Array.from(keyPointsNodes)
+    .map(li => li.innerText.replace(/^•\s*/, '').trim())
+    .filter(t => t && t !== 'Key points will appear here…' && t !== 'No key points generated.');
+
+  if (!summaryText || summaryText.includes('Your summary will appear here')) {
+    showToast('No summary available for visuals.', 'error');
+    return;
+  }
+
+  showSpinner('Generating Visual Insights...', 'Analyzing content...');
+  try {
+    const token = await getIdToken();
+    const API_BASE = window.location.origin;
+    const res = await fetch(`${API_BASE}/api/visualize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ summary: summaryText, key_points: keyPoints })
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to generate visuals');
+    }
+
+    const data = await res.json();
+    document.getElementById('visual-insights-section').style.display = 'block';
+
+    // Flowchart
+    const fNode = document.getElementById('mermaid-flowchart');
+    fNode.innerHTML = data.flowchart;
+    fNode.removeAttribute('data-processed');
+
+    // Mind Map
+    const mNode = document.getElementById('mermaid-mindmap');
+    mNode.innerHTML = data.mindmap;
+    mNode.removeAttribute('data-processed');
+
+    // Render Mermaid diagrams
+    if (typeof mermaid !== 'undefined') {
+      try { mermaid.init(undefined, "#mermaid-flowchart"); } catch(e) {}
+      try { mermaid.init(undefined, "#mermaid-mindmap"); } catch(e) {}
+    }
+
+    // Chart.js Graph
+    if (typeof Chart !== 'undefined') {
+      const gData = data.graph_data || { labels: [], values: [] };
+      const ctx = document.getElementById('chart-canvas').getContext('2d');
+      if (myChartInstance) myChartInstance.destroy();
+      
+      myChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: gData.labels,
+          datasets: [{
+            label: 'Keyword Frequency',
+            data: gData.values,
+            backgroundColor: 'rgba(108, 99, 255, 0.6)',
+            borderColor: 'rgba(108, 99, 255, 1)',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#e8ecf4' } }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#8892aa', stepSize: 1 },
+              grid: { color: 'rgba(255,255,255,0.05)' }
+            },
+            x: {
+              ticks: { color: '#8892aa' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    showToast('Visuals generated successfully!', 'success');
+  } catch (err) {
+    showToast(`Error generating visuals: ${err.message}`, 'error');
+  } finally {
+    hideSpinner();
+  }
+}
