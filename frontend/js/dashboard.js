@@ -174,6 +174,7 @@ async function submitUpload() {
       currentSourceName
     );
     displaySummary(summarizeRes.summary);
+    displayKeyPoints(summarizeRes.key_points);
     showToast('Done! Transcript and summary ready.', 'success');
     lengthSettings['result'] = lengthSettings['upload'];
     syncResultLengthBtns();
@@ -213,6 +214,7 @@ async function submitText() {
       currentSourceName
     );
     displaySummary(summarizeRes.summary);
+    displayKeyPoints(summarizeRes.key_points);
     showToast('Summary generated!', 'success');
     lengthSettings['result'] = lengthSettings['text'];
     syncResultLengthBtns();
@@ -250,6 +252,7 @@ async function submitUrl() {
       currentSourceName
     );
     displaySummary(summarizeRes.summary);
+    displayKeyPoints(summarizeRes.key_points);
     showToast('Transcription and summary complete!', 'success');
     lengthSettings['result'] = lengthSettings['url'];
     syncResultLengthBtns();
@@ -277,6 +280,7 @@ async function doResummarize() {
       currentSourceName
     );
     displaySummary(res.summary);
+    displayKeyPoints(res.key_points);
     showToast('Summary updated!', 'success');
   } catch (err) {
     showToast(`Error: ${err.message}`, 'error');
@@ -306,6 +310,15 @@ function displayTranscript(text) {
 
 function displaySummary(text) {
   document.getElementById('summary-output').textContent = text;
+}
+
+function displayKeyPoints(points) {
+  const el = document.getElementById('key-points-output');
+  if (!points || !points.length) {
+    el.innerHTML = '<li class="output-placeholder">No key points generated.</li>';
+    return;
+  }
+  el.innerHTML = points.map(pt => `<li style="margin-bottom: 8px; position: relative; padding-left: 14px;"><span style="position: absolute; left: 0; color: var(--accent);">•</span>${pt}</li>`).join('');
 }
 
 // ── Load Records ───────────────────────────────────────────────────────────
@@ -372,6 +385,14 @@ function openRecord(record) {
     record.source_name ? `Record: ${record.source_name}` : 'Record Detail';
   document.getElementById('record-transcript-text').textContent = record.transcript || '(no transcript)';
   document.getElementById('record-summary-text').textContent    = record.summary    || '(no summary)';
+  
+  const kpEl = document.getElementById('record-key-points-text');
+  if (record.key_points && record.key_points.length) {
+    kpEl.innerHTML = record.key_points.map(pt => `<li style="margin-bottom: 8px; position: relative; padding-left: 14px;"><span style="position: absolute; left: 0; color: var(--accent);">•</span>${pt}</li>`).join('');
+  } else {
+    kpEl.innerHTML = '<li class="output-placeholder">No key points available.</li>';
+  }
+  
   openModal('modal-record');
 }
 

@@ -28,7 +28,7 @@ SENTENCE_COUNTS = {
 }
 
 
-def summarize_text(text: str, length: str = "medium") -> str:
+def summarize_text(text: str, length: str = "medium") -> dict:
     """
     Summarize the given text using LSA.
 
@@ -37,10 +37,10 @@ def summarize_text(text: str, length: str = "medium") -> str:
         length: One of 'short', 'medium', 'long'.
 
     Returns:
-        A string containing the summary sentences joined with spaces.
+        A dictionary with 'summary' (string) and 'key_points' (list of strings).
     """
     if not text or not text.strip():
-        return "No text provided for summarization."
+        return {"summary": "No text provided for summarization.", "key_points": []}
 
     sentence_count = SENTENCE_COUNTS.get(length, 5)
 
@@ -50,6 +50,14 @@ def summarize_text(text: str, length: str = "medium") -> str:
     summarizer.stop_words = get_stop_words(LANGUAGE)
 
     sentences = summarizer(parser.document, sentence_count)
-    summary = " ".join(str(s) for s in sentences)
+    summary_str = " ".join(str(s) for s in sentences)
+    
+    # Extract 5 to 8 key points natively
+    kp_count = max(5, min(8, sentence_count))
+    kp_sentences = summarizer(parser.document, kp_count)
+    key_points = [str(s) for s in kp_sentences]
 
-    return summary if summary.strip() else "Could not generate a summary for the provided text."
+    if not summary_str.strip():
+        return {"summary": "Could not generate a summary for the provided text.", "key_points": []}
+
+    return {"summary": summary_str, "key_points": key_points}

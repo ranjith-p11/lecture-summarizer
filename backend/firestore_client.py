@@ -54,9 +54,11 @@ def save_record(
     user_email: str,
     transcript: str,
     summary: str,
-    source_type: str,   # 'file' | 'text' | 'url'
+    source_type: str,   # 'file' | 'text' | 'url' | 'document'
     source_name: str = "",
     summary_length: str = "medium",
+    key_points: list = None,
+    chart_data: dict = None,
 ) -> str:
     """
     Save a transcription/summarization record to Firestore.
@@ -74,6 +76,8 @@ def save_record(
         "source_type": source_type,
         "source_name": source_name,
         "summary_length": summary_length,
+        "key_points": key_points or [],
+        "chart_data": chart_data or {},
         "created_at": datetime.now(timezone.utc),
     }
     doc_ref.set(doc_data)

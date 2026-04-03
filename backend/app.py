@@ -139,7 +139,9 @@ def api_summarize():
         if summary_length not in ("short", "medium", "long"):
             summary_length = "medium"
 
-        summary = summarize_text(transcript, summary_length)
+        summary_res = summarize_text(transcript, summary_length)
+        summary = summary_res.get("summary", "")
+        key_points = summary_res.get("key_points", [])
 
         user_uid   = request.user.get("uid", "")
         user_email = request.user.get("email", "")
@@ -152,9 +154,10 @@ def api_summarize():
             source_type=source_type,
             source_name=source_name,
             summary_length=summary_length,
+            key_points=key_points,
         )
 
-        return jsonify({"summary": summary, "record_id": record_id})
+        return jsonify({"summary": summary, "key_points": key_points, "record_id": record_id})
 
     except Exception as e:
         print(f"[/api/summarize] Error: {e}")
@@ -209,7 +212,7 @@ def serve_static(path):
 # ─── Run ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8080))
     debug = os.environ.get("DEBUG", "1") == "1"
     print(f"[App] Starting Lecture Summarizer on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port, debug=debug)
