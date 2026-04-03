@@ -417,3 +417,51 @@ async function handleLogout() {
     showToast('Error signing out.', 'error');
   }
 }
+
+// ── Export Notes ───────────────────────────────────────────────────────────
+async function exportNotes(type) {
+  const summaryText = document.getElementById('summary-output').innerText || '';
+  const keyPointsNodes = document.querySelectorAll('#key-points-output li');
+  const keyPoints = Array.from(keyPointsNodes)
+    .map(li => li.innerText.replace(/^•\s*/, '').trim())
+    .filter(t => t && t !== 'Key points will appear here…' && t !== 'No key points generated.');
+
+  if (!summaryText || summaryText.includes('Your summary will appear here')) {
+    showToast('No summary to export.', 'error');
+    return;
+  }
+
+  showSpinner(`Generating ${type.toUpperCase()}...`, 'Exporting notes');
+  try {
+    const token = await getIdToken(); // from api.js
+    const API_BASE = window.location.origin;
+    const res = await fetch(`${API_BASE}/api/export/${type}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ summary: summaryText, key_points: keyPoints })
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Export failed');
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Lecture_Summary.${type === 'text' ? 'txt' : 'pdf'}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    showToast(`${type.toUpperCase()} exported successfully!`, 'success');
+  } catch (err) {
+    showToast(`Error exporting: ${err.message}`, 'error');
+  } finally {
+    hideSpinner();
+  }
+}

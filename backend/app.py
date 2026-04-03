@@ -5,7 +5,11 @@ import os
 import tempfile
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
+import io
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem
+from reportlab.lib.styles import getSampleStyleSheet
 from flask_cors import CORS
 
 from transcriber import transcribe_file, transcribe_youtube, transcribe_text_passthrough
@@ -189,6 +193,82 @@ def api_delete_record(record_id):
         return jsonify({"success": True})
     except Exception as e:
         print(f"[/api/records DELETE] Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/export/pdf", methods=["POST"])
+@require_auth
+def export_pdf():
+    try:
+        data = request.get_json(force=True)
+        summary = data.get("summary", "")
+        key_points = data.get("key_points", [])
+
+        styles = getSampleStyleSheet()
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        
+        story = []
+        # Title
+        story.append(Paragraph("Lecture Summary", styles['Title']))
+        story.append(Spacer(1, 12))
+        
+        # Summary
+        story.append(Paragraph(summary, styles['BodyText']))
+        story.append(Spacer(1, 12))
+        
+        # Key Points Section
+        story.append(Paragraph("Key Points", styles['Heading2']))
+        story.append(Spacer(1, 12))
+        
+        # Bullet points
+        items = [ListItem(Paragraph(pt, styles['BodyText'])) for pt in key_points]
+        story.append(ListFlowable(items, bulletType='bullet'))
+        
+        doc.build(story)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name="Lecture_Summary.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        print(f"[/api/export/pdf] Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/export/text", methods=["POST"])
+@require_auth
+def export_text():
+    try:
+        data = request.get_json(force=True)
+        summary = data.get("summary", "")
+        key_points = data.get("key_points", [])
+
+        # Build text string
+        lines = []
+        lines.append("Lecture Summary")
+        lines.append("")
+        lines.append(summary)
+        lines.append("")
+        lines.append("Key Points:")
+        lines.append("")
+        for pt in key_points:
+            lines.append(f"* {pt}")
+        
+        text_content = "\n".join(lines)
+        buffer = io.BytesIO(text_content.encode('utf-8'))
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name="Lecture_Summary.txt",
+            mimetype="text/plain"
+        )
+    except Exception as e:
+        print(f"[/api/export/text] Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 

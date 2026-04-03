@@ -490,6 +490,17 @@
             </div>
           </div>
         </div>
+
+        <div class="export-actions" style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;">
+          <button class="btn-primary" id="btn-export-pdf" onclick="exportNotes('pdf')" style="width:auto; padding:10px 20px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;margin-right:6px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+            Download PDF
+          </button>
+          <button class="btn-primary" id="btn-export-txt" onclick="exportNotes('text')" style="width:auto; padding:10px 20px; background:linear-gradient(135deg, var(--teal), #00bcd4);">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;margin-right:6px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Download TXT
+          </button>
+        </div>
       </div>
     </div>
 
